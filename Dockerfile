@@ -1,43 +1,39 @@
 FROM node:20-slim AS build
 
-# Install necessary build dependencies
+# Install dependencies needed to build Jitsi Meet
 RUN apt-get update && apt-get install -y \
     curl git make gcc g++ python3 python3-pip \
     libtool automake autoconf unzip ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Yarn
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get update && apt-get install -y nodejs && \
-    npm install -g yarn
-
 # Set working directory
 WORKDIR /app
 
-# Copy package.json, yarn.lock, and install dependencies
+# Copy dependency manifests and install
 COPY package*.json yarn.lock ./
 RUN yarn install --frozen-lockfile --force
 
-# Copy full source code
+# Copy full source
 COPY . .
 
-# Build the project
+# Build
 RUN make build
 
-# Start a production server using serve
+# -----------------
+# Production stage
 FROM node:20-slim AS prod
 
-# Install serve for production static file serving
+# Install static server
 RUN npm install -g serve
 
-# Set working directory
+# Working directory
 WORKDIR /app
 
-# Copy necessary build files from the build stage
+# Copy build output only
 COPY --from=build /app/libs /app/libs
 
-# Expose the port
+# Expose production port
 EXPOSE 8080
 
-# Run the production server
+# Serve built frontend
 CMD ["serve", "-s", "libs", "-l", "8080"]
