@@ -1,56 +1,43 @@
+FROM node:20-slim AS build
 
-FROM node:20
+# Install necessary build dependencies
+RUN apt-get update && apt-get install -y \
+    curl git make gcc g++ python3 python3-pip \
+    libtool automake autoconf unzip ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set working directory.
+# Install Yarn
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    npm install -g yarn
+
+# Set working directory
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
+# Copy package.json, yarn.lock, and install dependencies
+COPY package*.json yarn.lock ./
+RUN yarn install --frozen-lockfile --force
 
-
-# RUN npm cache clean --force
-# RUN rm -rf node_modules package-lock.json
-RUN npm install --force
-
-# Copy app source code
+# Copy full source code
 COPY . .
 
-
-#website URL : https://superj.app 
-#branch name : superj_prod
-
-
-# ENV NODE_ENV=production
-
-# ENV SERVER=production
-
-
-# ENV API_URL=https://api.superj.app/v2
-
-# ENV CAPTCHA_TOKEN=6Ld_2gsqAAAAAKLxbssanVUk0DHp3rB-S840ZeWH
-
-# ENV ENCRYPTION_KEY=d1e22b3dabc47e6921a8c92d4a28c7a5
-# # prod gtag key
-# ENV IRCTC_GOOGLE_ANALYTICS_TAG=G-Y60193FS64
-
-# #developement gtag key
-# # ENV IRCTC_GOOGLE_ANALYTICS_TAG=G-Y60193FS64
-# ENV THIRD_PARTY_ENCRYPTION_KEY=2b7e151628aed2a6abf7158809cf4f3c
-# ENV MIXPANEL_TOKEN = ca4113b876ea9ade5832223d0742bd76
-# ENV X_ID = fffbfg
-
-# #ReCAPTCHA KEYS
-# ENV RECAPTCHA_SITE_KEY=6LdIQvoqAAAAAGHImP8hX5H30x0zJvsRSeIPkLIC
-# ENV RECAPTCHA_SECRET_KEY=6LdIQvoqAAAAAPjSPUcFEaZDLIeXUpGXdNbCAXfQ
-
-
-# Build the Next.js app
+# Build the project
 RUN make build
 
+# Start a production server using serve
+FROM node:20-slim AS prod
 
-# Expose the port Next.js is running on 
+# Install serve for production static file serving
+RUN npm install -g serve
 
+# Set working directory
+WORKDIR /app
+
+# Copy necessary build files from the build stage
+COPY --from=build /app/libs /app/libs
+
+# Expose the port
 EXPOSE 8080
 
-# Command to run the Next.js app
-CMD ["npm", "start"]
+# Run the production server
+CMD ["serve", "-s", "libs", "-l", "8080"]
