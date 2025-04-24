@@ -17,7 +17,7 @@ RUN npm install --force
 COPY . .
 
 # Build using Makefile
-RUN make build
+RUN make
 
 # --------------------------------
 # Production stage
