@@ -1,6 +1,6 @@
 FROM node:20-slim AS build
 
-# Install dependencies needed to build Jitsi Meet
+# Install required system packages
 RUN apt-get update && apt-get install -y \
     curl git make gcc g++ python3 python3-pip \
     libtool automake autoconf unzip ffmpeg && \
@@ -9,31 +9,31 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy dependency manifests and install
-COPY package*.json yarn.lock ./
-RUN yarn install --frozen-lockfile --force
+# Copy dependency files and install with npm
+COPY package*.json ./
+RUN npm install --force
 
-# Copy full source
+# Copy the rest of the app
 COPY . .
 
-# Build
+# Build using Makefile
 RUN make build
 
-# -----------------
+# --------------------------------
 # Production stage
 FROM node:20-slim AS prod
 
-# Install static server
+# Install static file server
 RUN npm install -g serve
 
-# Working directory
+# Set working directory
 WORKDIR /app
 
-# Copy build output only
+# Copy built files from build stage
 COPY --from=build /app/libs /app/libs
 
-# Expose production port
+# Expose the production port
 EXPOSE 8080
 
-# Serve built frontend
+# Serve the built site
 CMD ["serve", "-s", "libs", "-l", "8080"]
