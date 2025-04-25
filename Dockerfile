@@ -1,40 +1,57 @@
-FROM node:23-slim AS build
+FROM debian:bullseye-slim
 
-# Install required system packages
-RUN apt-get update && apt-get install -y \
-    curl git make gcc g++ python3 python3-pip \
-    libtool automake autoconf unzip ffmpeg && \
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install basic utilities and dependencies
+RUN apt-get update && \
+    apt-get install -y curl gnupg apt-transport-https ca-certificates wget supervisor \
+    nginx openssl sudo lua5.2 liblua5.2-0 liblua5.2-dev \
+    procps python3 python3-pip && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /app
+# Add Jitsi repository
+RUN wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/" > /etc/apt/sources.list.d/jitsi-stable.list
 
-# Copy dependency files and install with npm
-COPY package*.json ./
-RUN npm install --force
+# Install Jitsi components
+RUN apt-get update && \
+    apt-get install -y jitsi-meet-web jitsi-meet-prosody jitsi-meet-turnserver \
+                       jitsi-meet-web-config jitsi-videobridge2 jicofo && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the app
-COPY . .
+# Setup environment variables
+ENV XMPP_DOMAIN=meet.jitsi
+ENV XMPP_SERVER=localhost
+ENV JICOFO_AUTH_DOMAIN=auth.meet.jitsi
+ENV JVB_AUTH_DOMAIN=auth.meet.jitsi
+ENV JVB_BREWERY_MUC=jvbbrewery
+ENV JIBRI_BREWERY_MUC=jibribrewery
+ENV JIGASI_BREWERY_MUC=jigasibrewery
+ENV JIGASI_SIP_URI=jitsi-meet-public
+ENV JICOFO_AUTH_USER=focus
+ENV JVB_AUTH_USER=jvb
+ENV PUBLIC_URL=https://fgr.superj.app
+ENV ENABLE_AUTH=0
+ENV ENABLE_GUESTS=1
+ENV ENABLE_TRANSCRIPTIONS=0
+ENV ENABLE_LETSENCRYPT=0
+ENV LETSENCRYPT_DOMAIN=fgr.superj.app
+ENV LETSENCRYPT_EMAIL=admin@superj.app
+ENV HTTP_PORT=8080
+ENV HTTPS_PORT=8443
 
-# Build using Makefile
-RUN make
+# Configure supervisor to run all services
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Configuration script
+COPY config.sh /config.sh
+RUN chmod +x /config.sh
 
-# --------------------------------
-# Production stage
-FROM node:23-slim AS prod
+# Expose needed ports
+EXPOSE 8080 8443 4443 10000/udp
 
-# Install static file server
-RUN npm install -g serve
-
-# Set working directory
-WORKDIR /app
-
-# Copy built files from build stage
-COPY --from=build /app/libs /app/libs
-
-# Expose the production port
-EXPOSE 8080
-
-# Serve the built site
-CMD ["serve", "-s", "libs", "-l", "8080"]
+# Entry point
+CMD ["/config.sh"]
