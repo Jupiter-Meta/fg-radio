@@ -3,22 +3,22 @@ FROM debian:bullseye-slim
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install basic utilities and dependencies
+# Install base utilities
 RUN apt-get update && \
-    apt-get install -y curl gnupg apt-transport-https ca-certificates wget supervisor \
-    nginx openssl sudo lua5.2 liblua5.2-0 liblua5.2-dev \
-    procps python3 python3-pip && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y wget gnupg apt-transport-https ca-certificates
+
+# Add Prosody repository and key (CRITICAL STEP)
+RUN echo "deb http://packages.prosody.im/debian $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/prosody.list && \
+    wget https://prosody.im/files/prosody-debian-packages.key -O /etc/apt/trusted.gpg.d/prosody.gpg
 
 # Add Jitsi repository
 RUN wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/" > /etc/apt/sources.list.d/jitsi-stable.list
 
-# Install Jitsi components
+# Now install Jitsi components
 RUN apt-get update && \
     apt-get install -y jitsi-meet-web jitsi-meet-prosody jitsi-meet-turnserver \
-                       jitsi-meet-web-config jitsi-videobridge2 jicofo && \
+                      jitsi-meet-web-config jitsi-videobridge2 jicofo && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
