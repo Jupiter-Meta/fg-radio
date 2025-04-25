@@ -153,6 +153,8 @@ Component "focus.$XMPP_DOMAIN"
     component_secret = "fgr.superj.app"
 EOF
 
+mkdir -p /etc/prosody/conf.d/
+
 # Enable the Prosody configuration
 ln -sf /etc/prosody/conf.avail/$XMPP_DOMAIN.cfg.lua /etc/prosody/conf.d/
 
