@@ -4,6 +4,7 @@ set -e
 
 # Default value for XMPP_DOMAIN if not set
 XMPP_DOMAIN=${XMPP_DOMAIN:-fgr.superj.app}
+export HTTP_PORT=${PORT:-8080}
 
 # Install lua-unbound to fix prosody warning
 apt-get update && apt-get install -y lua-unbound || true

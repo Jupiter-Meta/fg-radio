@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+  jitsi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jitsi-meet
+    restart: unless-stopped
+    ports:
+      # HTTP port
+      - "80:8080"
+      # HTTPS port
+      - "443:8443"
+      # JVB TCP fallback
+      - "4443:4443"
+      # JVB UDP (critical for good video performance)
+      - "10000:10000/udp"
+    volumes:
+      # Persistent data storage
+      - jitsi-config:/config
+      # Custom interface_config.js (optional)
+      - ./interface_config.js:/usr/share/jitsi-meet/interface_config.js:ro
+      # Log files
+      - jitsi-logs:/var/log
+      # Certificates (if you want to use your own)
+      # - ./certs:/etc/jitsi/meet/certs:ro
+    environment:
+      # Domain configuration
+      - XMPP_DOMAIN=fgr.superj.app
+      - XMPP_SERVER=localhost
+      - PUBLIC_URL=https://fgr.superj.app
+      
+      # Authentication
+      - JICOFO_AUTH_USER=focus
+      - JICOFO_AUTH_PASSWORD=fgr.superj.app
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=fgr.superj.app
+      - JICOFO_AUTH_DOMAIN=auth.meet.jitsi
+      - JVB_AUTH_DOMAIN=auth.meet.jitsi
+      
+      # MUCs
+      - JVB_BREWERY_MUC=jvbbrewery
+      - JIBRI_BREWERY_MUC=jibribrewery
+      - JIGASI_BREWERY_MUC=jigasibrewery
+      
+      # Feature flags
+      - ENABLE_AUTH=0
+      - ENABLE_GUESTS=1
+      - ENABLE_TRANSCRIPTIONS=0
+      - ENABLE_LETSENCRYPT=0
+      
+      # Port configuration
+      - HTTP_PORT=8080
+      - HTTPS_PORT=8443
+      
+      # Time zone
+      - TZ=UTC
+    networks:
+      - jitsi-network
+    extra_hosts:
+      - "fgr.superj.app:127.0.0.1"
+
+  # Optional: Add a watchtower service to automatically update your container
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 86400 # Check for updates once per day
+    networks:
+      - jitsi-network
+
+networks:
+  jitsi-network:
+    driver: bridge
+
+volumes:
+  jitsi-config:
+  jitsi-logs:
