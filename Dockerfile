@@ -1,4 +1,4 @@
-FROM node:20-slim AS build
+FROM node:23-slim AS build
 
 # Install required system packages
 RUN apt-get update && apt-get install -y \
@@ -22,7 +22,7 @@ RUN make
 
 # --------------------------------
 # Production stage
-FROM node:20-slim AS prod
+FROM node:23-slim AS prod
 
 # Install static file server
 RUN npm install -g serve
