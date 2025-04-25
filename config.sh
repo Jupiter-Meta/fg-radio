@@ -2,6 +2,12 @@
 
 set -e
 
+# Default value for XMPP_DOMAIN if not set
+XMPP_DOMAIN=${XMPP_DOMAIN:-fgr.superj.app}
+
+# Install lua-unbound to fix prosody warning
+apt-get update && apt-get install -y lua-unbound || true
+
 # Generate self-signed SSL certificates if needed
 if [ ! -f /etc/jitsi/meet/$XMPP_DOMAIN.crt ]; then
     echo "Generating self-signed SSL certificate for $XMPP_DOMAIN"
@@ -98,7 +104,9 @@ server {
 }
 EOF
 
+# Only create directory once
 mkdir -p /etc/prosody/conf.d/
+
 # Configure prosody
 cat > /etc/prosody/conf.avail/$XMPP_DOMAIN.cfg.lua << EOF
 plugin_paths = { "/usr/share/jitsi-meet/prosody-plugins/" }
@@ -154,12 +162,23 @@ Component "focus.$XMPP_DOMAIN"
     component_secret = "fgr.superj.app"
 EOF
 
-mkdir -p /etc/prosody/conf.d/
+# Fix the symbolic link to include the filename
+ln -sf /etc/prosody/conf.avail/$XMPP_DOMAIN.cfg.lua /etc/prosody/conf.d/$XMPP_DOMAIN.cfg.lua
 
-# Enable the Prosody configuration
-ln -sf /etc/prosody/conf.avail/$XMPP_DOMAIN.cfg.lua /etc/prosody/conf.d/
+# CRITICAL: Add include directive to the main Prosody config if it doesn't exist
+if ! grep -q "Include \"conf.d/\*\.cfg\.lua\"" /etc/prosody/prosody.cfg.lua; then
+    echo 'Include "conf.d/*.cfg.lua"' >> /etc/prosody/prosody.cfg.lua
+fi
+
+# Set proper permissions
+chown -R prosody:prosody /etc/prosody
+
+# Verify configuration before proceeding
+echo "Checking Prosody configuration..."
+prosodyctl check || true
 
 # Create the Prosody user
+echo "Registering Prosody users..."
 prosodyctl register focus auth.$XMPP_DOMAIN fgr.superj.app
 prosodyctl register jvb auth.$XMPP_DOMAIN fgr.superj.app
 
@@ -203,7 +222,14 @@ videobridge {
 EOF
 
 # Make nginx use the updated configuration
+echo "Checking nginx configuration..."
 nginx -t && nginx -s reload
+
+# Add diagnostic information
+echo "Configuration complete. Starting services..."
+echo "XMPP_DOMAIN: $XMPP_DOMAIN"
+echo "XMPP_SERVER: $XMPP_SERVER"
+echo "HTTP_PORT: $HTTP_PORT"
 
 # Start all services with supervisord
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

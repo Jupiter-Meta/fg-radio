@@ -9,7 +9,7 @@ RUN echo "#!/bin/sh\nexit 101" > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/pol
 # Install prerequisites
 RUN apt-get update && \
     apt-get install -y --no-install-recommends wget gnupg apt-transport-https ca-certificates \
-    lsb-release curl procps sudo lua5.2 liblua5.2-0 liblua5.2-dev lua-filesystem \
+    lsb-release curl procps sudo lua5.2 liblua5.2-0 liblua5.2-dev lua-unbound lua-filesystem \
     nginx openssl python3 python3-pip supervisor jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
