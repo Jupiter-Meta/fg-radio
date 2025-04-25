@@ -1,29 +1,13 @@
-# Example: Assuming your base image is Debian Bullseye
-FROM debian:bullseye
+FROM debian:bullseye-slim
 
-# Install prerequisite tools (if not already present)
-# Add ca-certificates for HTTPS access, lsb-release to detect distribution codename
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wget \
-        gpg \
-        ca-certificates \
-        apt-transport-https \
-        lsb-release \
-        lua5.2 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Add the Prosody repository key and source list
-RUN wget -qO - https://prosody.im/files/prosody-debian-packages.key | gpg --dearmor > /usr/share/keyrings/prosody-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/prosody-keyring.gpg] http://packages.prosody.im/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/prosody.list
+# Preseed debconf answers for jitsi-meet-web-config
+RUN echo "jitsi-meet-web-config    jitsi-meet/cert-choice    select  Generate a new self-signed certificate" | debconf-set-selections && \
+    echo "jitsi-meet-web-config    jitsi-meet/hostname    string  localhost" | debconf-set-selections
 
-# Add the Jitsi repository key and source list (Your Step 4, slightly modified for clarity)
-RUN wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/" > /etc/apt/sources.list.d/jitsi-stable.list
+# Add Prosody and Jitsi repositories as needed...
 
-# NOW, update apt lists again and install everything
-# This apt-get update will now know about the Prosody repo too
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         jitsi-meet-web \
@@ -33,7 +17,6 @@ RUN apt-get update && \
         jitsi-meet-web-config \
         jitsi-videobridge2 \
         jicofo && \
-    # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
