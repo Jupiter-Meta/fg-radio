@@ -1,24 +1,39 @@
-FROM debian:bullseye-slim
+# Example: Assuming your base image is Debian Bullseye
+FROM debian:bullseye
 
-# Avoid prompts from apt
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install base utilities
+# Install prerequisite tools (if not already present)
+# Add ca-certificates for HTTPS access, lsb-release to detect distribution codename
 RUN apt-get update && \
-    apt-get install -y wget gnupg apt-transport-https ca-certificates
+    apt-get install -y --no-install-recommends \
+        wget \
+        gpg \
+        ca-certificates \
+        apt-transport-https \
+        lsb-release \
+        lua5.2 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add Prosody repository and key (CRITICAL STEP)
-RUN echo "deb http://packages.prosody.im/debian $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/prosody.list && \
-    wget https://prosody.im/files/prosody-debian-packages.key -O /etc/apt/trusted.gpg.d/prosody.gpg
+# Add the Prosody repository key and source list
+RUN wget -qO - https://prosody.im/files/prosody-debian-packages.key | gpg --dearmor > /usr/share/keyrings/prosody-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/prosody-keyring.gpg] http://packages.prosody.im/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/prosody.list
 
-# Add Jitsi repository
+# Add the Jitsi repository key and source list (Your Step 4, slightly modified for clarity)
 RUN wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/" > /etc/apt/sources.list.d/jitsi-stable.list
 
-# Now install Jitsi components
+# NOW, update apt lists again and install everything
+# This apt-get update will now know about the Prosody repo too
 RUN apt-get update && \
-    apt-get install -y jitsi-meet-web jitsi-meet-prosody jitsi-meet-turnserver \
-                      jitsi-meet-web-config jitsi-videobridge2 jicofo && \
+    apt-get install -y --no-install-recommends \
+        jitsi-meet-web \
+        prosody \
+        jitsi-meet-prosody \
+        jitsi-meet-turnserver \
+        jitsi-meet-web-config \
+        jitsi-videobridge2 \
+        jicofo && \
+    # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
