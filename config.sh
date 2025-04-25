@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Generate self-signed SSL certificates if needed
 if [ ! -f /etc/jitsi/meet/$XMPP_DOMAIN.crt ]; then
     echo "Generating self-signed SSL certificate for $XMPP_DOMAIN"
