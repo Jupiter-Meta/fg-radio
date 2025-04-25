@@ -98,6 +98,7 @@ server {
 }
 EOF
 
+mkdir -p /etc/prosody/conf.d/
 # Configure prosody
 cat > /etc/prosody/conf.avail/$XMPP_DOMAIN.cfg.lua << EOF
 plugin_paths = { "/usr/share/jitsi-meet/prosody-plugins/" }
