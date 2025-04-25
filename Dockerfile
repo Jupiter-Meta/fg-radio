@@ -1,34 +1,40 @@
-# Start with the official Jitsi Meet web image
-FROM jitsi/web:stable
+FROM node:20-slim AS build
 
-# Set environment variables
-ENV PUBLIC_URL=https://your-cloud-run-url.run.app
-ENV XMPP_DOMAIN=meet.jitsi
-ENV XMPP_BOSH_URL_BASE=http://xmpp.meet.jitsi:5280
-ENV JICOFO_AUTH_USER=focus
-ENV JVB_BREWERY_MUC=jvbbrewery
-ENV JIGASI_BREWERY_MUC=jigasibrewery
-ENV JIBRI_BREWERY_MUC=jibribrewery
-ENV JIGASI_SIP_URI=test@example.com
-ENV JVB_TCP_HARVESTER_DISABLED=true
-ENV JVB_AUTH_USER=jvb
-ENV JIBRI_PENDING_TIMEOUT=90
-ENV JIBRI_XMPP_USER=jibri
-ENV JIBRI_RECORDER_USER=recorder
-ENV ENABLE_AUTH=0
-ENV ENABLE_GUESTS=0
-ENV ENABLE_HTTP_REDIRECT=0
-ENV TZ=UTC
+# Install required system packages
+RUN apt-get update && apt-get install -y \
+    curl git make gcc g++ python3 python3-pip \
+    libtool automake autoconf unzip ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
-# Use the PORT environment variable from Cloud Run
-ENV HTTP_PORT=8080
-ENV HTTPS_PORT=8443
+# Set working directory
+WORKDIR /app
 
-# Make the startup script executable
-RUN chmod +x /init
+# Copy dependency files and install with npm
+COPY package*.json ./
+RUN npm install --force
 
-# Port that will be used by Cloud Run
+# Copy the rest of the app
+COPY . .
+
+# Build using Makefile
+RUN make
+
+
+# --------------------------------
+# Production stage
+FROM node:20-slim AS prod
+
+# Install static file server
+RUN npm install -g serve
+
+# Set working directory
+WORKDIR /app
+
+# Copy built files from build stage
+COPY --from=build /app/libs /app/libs
+
+# Expose the production port
 EXPOSE 8080
 
-# Command to run when container starts
-CMD ["/init"]
+# Serve the built site
+CMD ["serve", "-s", "libs", "-l", "8080"]
