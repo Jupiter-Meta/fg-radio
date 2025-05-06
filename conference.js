@@ -166,7 +166,7 @@ import { createRnnoiseProcessor } from './react/features/stream-effects/rnnoise'
 import { handleToggleVideoMuted } from './react/features/toolbox/actions.any';
 import { transcriberJoined, transcriberLeft } from './react/features/transcribing/actions';
 import { muteLocal } from './react/features/video-menu/actions.any';
-
+import { CustomConferenceLayout } from './react/features/custom-layout';
 const logger = Logger.getLogger(__filename);
 let room;
 
@@ -191,6 +191,7 @@ const commands = {
     EMAIL: EMAIL_COMMAND,
     ETHERPAD: 'etherpad'
 };
+
 
 /**
  * Share data to other users.
@@ -2047,6 +2048,12 @@ export default {
         const { dispatch } = APP.store;
 
         APP.UI.initConference();
+
+        // Render the CustomConferenceLayout as part of the UI initialization
+        APP.UI.renderComponent(CustomConferenceLayout, {
+            participants: room.getParticipants(),
+            isAudioOnly: this.isAudioOnly()
+        });
 
         dispatch(conferenceJoined(room));
 

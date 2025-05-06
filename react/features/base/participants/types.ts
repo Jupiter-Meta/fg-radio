@@ -52,6 +52,7 @@ export interface ILocalParticipant extends IParticipant {
     startWithVideoMuted?: boolean;
     userSelectedMicDeviceId?: string;
     userSelectedMicDeviceLabel?: string;
+    raisedHand?: boolean;
 }
 
 export interface IParticipantFeatures {

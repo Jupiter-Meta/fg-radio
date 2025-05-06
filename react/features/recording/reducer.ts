@@ -37,6 +37,7 @@ export interface IRecordingState {
     sessionDatas: Array<ISessionData>;
     streamKey?: string;
     wasStartRecordingSuggested?: boolean;
+    isRecording?: boolean;
 }
 
 /**

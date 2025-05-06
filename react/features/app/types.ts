@@ -82,6 +82,8 @@ import { IVirtualBackground } from '../virtual-background/reducer';
 import { IVisitorsState } from '../visitors/reducer';
 import { IWebHid } from '../web-hid/reducer';
 import { IWhiteboardState } from '../whiteboard/reducer';
+import { IFaceMaskingState } from '../face-masking/types';
+import { IQuestionPanelState } from '../question-panel/types';
 
 export interface IStore {
     dispatch: ThunkDispatch<IReduxState, void, AnyAction>;
@@ -174,6 +176,8 @@ export interface IReduxState {
     'features/visitors': IVisitorsState;
     'features/web-hid': IWebHid;
     'features/whiteboard': IWhiteboardState;
+    'features/face-masking': IFaceMaskingState;
+    'features/question-panel': IQuestionPanelState;
 }
 
 export interface IReloadNowOptions {
