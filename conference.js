@@ -2049,11 +2049,29 @@ export default {
 
         APP.UI.initConference();
 
-        // Render the CustomConferenceLayout as part of the UI initialization
-        APP.UI.renderComponent(CustomConferenceLayout, {
-            participants: room.getParticipants(),
-            isAudioOnly: this.isAudioOnly()
+        // Instead of using undefined setCustomLayout action, directly use store dispatch
+        // This tells your custom components to render if they check this state
+        APP.store.dispatch({
+            type: 'SET_CUSTOM_LAYOUT_ENABLED',
+            enabled: true
         });
+
+        // Fallback: If using ReactDOM directly, it needs to be imported
+        // We'll keep this but comment it as it might cause issues with React's lifecycle
+        /*
+        const container = document.getElementById('react-conference-container');
+        if (container) {
+            // Using direct store access instead of unavailable functions
+            const participants = room.getParticipants();
+            const isAudioOnly = this.isAudioOnly();
+            
+            // Note: This approach bypasses React's normal rendering cycle
+            // and may cause issues with state updates
+            APP.UI.showCustomLayout(participants, isAudioOnly);
+        } else {
+            logger.warn('Conference container not found in DOM. Ensure #react-conference-container exists.');
+        }
+        */
 
         dispatch(conferenceJoined(room));
 
@@ -2066,6 +2084,31 @@ export default {
             dispatch(setVideoUnmutePermissions(true, true));
         }
     },
+
+    /**
+     * Callback invoked when the conference has been successfully joined.
+     * Initializes the UI and various other features.
+     *
+     * @private
+     * @returns {void}
+     */
+    // _onConferenceJoined() {
+    //     const { dispatch } = APP.store;
+
+    //     APP.UI.initConference();
+
+    //     dispatch(conferenceJoined(room));
+
+    //     const jwt = APP.store.getState()['features/base/jwt'];
+
+    //     if (jwt?.user?.hiddenFromRecorder) {
+    //         dispatch(muteLocal(true, MEDIA_TYPE.AUDIO));
+    //         dispatch(muteLocal(true, MEDIA_TYPE.VIDEO));
+    //         dispatch(setAudioUnmutePermissions(true, true));
+    //         dispatch(setVideoUnmutePermissions(true, true));
+    //     }
+    // },
+
 
     /**
      * Updates the list of current devices.

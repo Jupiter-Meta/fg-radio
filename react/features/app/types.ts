@@ -178,6 +178,9 @@ export interface IReduxState {
     'features/whiteboard': IWhiteboardState;
     'features/face-masking': IFaceMaskingState;
     'features/question-panel': IQuestionPanelState;
+    'features/custom-layout': {
+        enabled: boolean;
+    };
 }
 
 export interface IReloadNowOptions {
