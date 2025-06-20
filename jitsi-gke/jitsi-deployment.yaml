@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-meet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jitsi-meet
+  template:
+    metadata:
+      labels:
+        app: jitsi-meet
+    spec:
+      containers:
+        - name: jitsi-meet
+          image: saishibu38380/fgr:latest
+          ports:
+            - containerPort: 8080

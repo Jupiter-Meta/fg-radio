@@ -124,4 +124,4 @@ RUN mkdir -p /config && \
 EXPOSE 8080 8443 4443 10000/udp
 
 # Entry point
-CMD ["/config.sh"]
+ENTRYPOINT ["bash", "/config.sh"]
